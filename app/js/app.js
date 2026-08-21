@@ -2,12 +2,14 @@
  * Screen 1: draw → auto-match → 5 canonical candidates.
  * Screen 2: tap a candidate → sign details (from glyphs.json) → back.
  * All inference is local (onnxruntime-web, wasm). */
+import { DocumentEditor } from "./document/editor.mjs";
 import { rgbaToGray, preprocess } from "./preprocess.mjs";
 import { GlyphMatcher } from "./matcher.mjs";
 import {
   saveSample, patchSample, countSamples, clearSamples, exportSamples,
   listSamples,
 } from "./collect.mjs";
+
 
 const $ = (id) => document.getElementById(id);
 const ort = globalThis.ort;
@@ -72,8 +74,10 @@ async function boot() {
   $("btn-retry").hidden = true;
   try {
     if (typeof ort === "undefined") {
-      throw new Error("This browser does not support the on-device recognizer " +
-                      "(WebAssembly required).");
+      throw new Error(
+        "Recognizer runtime is unavailable. " +
+        "The document editor can still be used with Gardiner-code entry."
+      );
     }
     // Must be an absolute URL: onnxruntime-web dynamically imports the wasm
     // glue module from *within* ort.min.js's own scope, so a relative prefix
@@ -250,7 +254,57 @@ function renderResults(hits) {
        <span class="sim">${h.score.toFixed(2)}</span>` +
       (i === 0 ? `<span class="tag">best match</span>` : "");
     el.title = g.desc || h.label;
-    el.onclick = () => showDetail(h.label);
+    el.onclick = () => {
+
+      if (documentInputMode) {
+    
+        /*
+         * Record the user's selection just as normal
+         * Seshat recognition does.
+         */
+        collectSnapshot(h.label);
+    
+        /*
+         * Insert recognized Gardiner sign
+         * into our document.
+         */
+        documentEditor.insertSign(
+          h.label
+        );
+    
+        /*
+         * Leave drawing mode.
+         */
+        documentInputMode = false;
+    
+        /*
+         * Clear drawing.
+         */
+        strokes = [];
+    
+        redraw();
+    
+        $("results").hidden = true;
+    
+        drawingId = null;
+        collectId = null;
+    
+        /*
+         * Return to document.
+         */
+        showDocumentScreen();
+    
+      } else {
+    
+        /*
+         * Normal Seshat behavior.
+         */
+        showDetail(
+          h.label
+        );
+    
+      }
+    };
     cards.appendChild(el);
   });
   $("results").hidden = false;
@@ -418,5 +472,327 @@ async function selftest() {
 }
 
 /* ------------------------------------------------ go */
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+// Service worker disabled while developing locally.
+// Re-enable for production/offline use later.
+//if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
 boot();
+
+
+
+$("document-link").onclick = (e) => {
+  e.preventDefault();
+
+  $("screen-draw").hidden = true;
+  $("screen-detail").hidden = true;
+  $("screen-history").hidden = true;
+  $("screen-document").hidden = false;
+};
+
+$("btn-document-back").onclick = () => {
+  $("screen-document").hidden = true;
+  $("screen-draw").hidden = false;
+};
+
+
+
+
+/* ============================================================
+ * DOCUMENT EDITOR
+ * ============================================================ */
+
+let documentInputMode = false;
+
+const documentEditor = new DocumentEditor(
+  $("document-content"),
+
+  {
+    onChange(state) {
+      const title =
+        $("document-title");
+
+      if (title) {
+        title.textContent =
+          state.document.title;
+      }
+
+      const undo =
+        $("btn-document-undo");
+
+      const redo =
+        $("btn-document-redo");
+
+      if (undo) {
+        undo.disabled =
+          !state.canUndo;
+      }
+
+      if (redo) {
+        redo.disabled =
+          !state.canRedo;
+      }
+
+      const status =
+        $("document-save-status");
+
+      if (status) {
+        status.textContent =
+          "Saved locally";
+      }
+    }
+  }
+);
+
+function showDocumentScreen() {
+  const draw = $("screen-draw");
+  const detail = $("screen-detail");
+  const history = $("screen-history");
+  const doc = $("screen-document");
+
+  if (draw) draw.hidden = true;
+  if (detail) detail.hidden = true;
+  if (history) history.hidden = true;
+  if (doc) doc.hidden = false;
+
+  documentEditor.render();
+
+  window.scrollTo(0, 0);
+}
+
+function showDrawingScreenForDocument() {
+  documentInputMode = true;
+
+  $("screen-document").hidden = true;
+  $("screen-detail").hidden = true;
+  $("screen-history").hidden = true;
+  $("screen-draw").hidden = false;
+
+  /*
+   * Clear old drawing so the user starts fresh.
+   */
+  strokes = [];
+
+  redraw();
+
+  $("results").hidden = true;
+
+  drawingId = null;
+  collectId = null;
+}
+
+
+/* ------------------------------------------------------------
+ * Open / close document screen
+ * ------------------------------------------------------------ */
+
+$("document-link").onclick = (event) => {
+  event.preventDefault();
+
+  documentInputMode = false;
+
+  showDocumentScreen();
+};
+
+
+$("btn-document-back").onclick = () => {
+  documentInputMode = false;
+
+  $("screen-document").hidden = true;
+  $("screen-draw").hidden = false;
+};
+
+
+/* ------------------------------------------------------------
+ * Document controls
+ * ------------------------------------------------------------ */
+
+$("btn-document-new").onclick = () => {
+  documentEditor.newDocument();
+};
+
+
+$("btn-document-rename").onclick = () => {
+  const current =
+    documentEditor.document.title;
+
+  const title =
+    prompt(
+      "Document name:",
+      current
+    );
+
+  if (title) {
+    documentEditor.rename(title);
+  }
+};
+
+
+$("btn-document-undo").onclick = () => {
+  documentEditor.undo();
+};
+
+
+$("btn-document-redo").onclick = () => {
+  documentEditor.redo();
+};
+
+$("btn-document-clear").onclick = () => {
+  documentEditor.clearAll();
+};
+
+
+$("btn-document-export").onclick = () => {
+  documentEditor.exportJSON();
+};
+
+$("btn-document-export-png").onclick = () => {
+  documentEditor.exportPNG();
+};
+
+
+/* ------------------------------------------------------------
+ * Insert
+ * ------------------------------------------------------------ */
+
+$("btn-document-code").onclick = () => {
+  const code =
+    prompt(
+      "Enter a Gardiner sign code, for example A1 or G17:"
+    );
+
+  if (!code) {
+    return;
+  }
+
+  documentEditor.insertSign(
+    code.trim().toUpperCase()
+  );
+};
+
+
+$("btn-document-draw").onclick = () => {
+  showDrawingScreenForDocument();
+};
+
+
+$("btn-document-linebreak").onclick = () => {
+  documentEditor.insertLineBreak();
+};
+
+
+/* ------------------------------------------------------------
+ * Editing
+ * ------------------------------------------------------------ */
+
+$("btn-document-delete").onclick = () => {
+  documentEditor.deleteSelected();
+};
+
+
+$("btn-document-left").onclick = () => {
+  documentEditor.moveSelectedLeft();
+};
+
+
+$("btn-document-right").onclick = () => {
+  documentEditor.moveSelectedRight();
+};
+
+
+/* ------------------------------------------------------------
+ * Grouping
+ * ------------------------------------------------------------ */
+
+$("btn-document-horizontal").onclick = () => {
+  documentEditor.groupHorizontal();
+};
+
+
+$("btn-document-vertical").onclick = () => {
+  documentEditor.groupVertical();
+};
+
+
+$("btn-document-ungroup").onclick = () => {
+  documentEditor.ungroupSelected();
+};
+
+
+/* ------------------------------------------------------------
+ * Document keyboard shortcuts
+ * ------------------------------------------------------------ */
+
+window.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+      $("screen-document").hidden
+    ) {
+      return;
+    }
+
+    const target =
+      event.target;
+
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+
+    const mod =
+      event.ctrlKey ||
+      event.metaKey;
+
+    if (
+      mod &&
+      event.key.toLowerCase() === "z" &&
+      !event.shiftKey
+    ) {
+      event.preventDefault();
+
+      documentEditor.undo();
+
+      return;
+    }
+
+    if (
+      (
+        mod &&
+        event.key.toLowerCase() === "y"
+      ) ||
+      (
+        mod &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "z"
+      )
+    ) {
+      event.preventDefault();
+
+      documentEditor.redo();
+
+      return;
+    }
+
+    if (
+      mod &&
+      event.key.toLowerCase() === "a"
+    ) {
+      event.preventDefault();
+
+      documentEditor.selectAll();
+
+      return;
+    }
+
+    if (
+      event.key === "Delete" ||
+      event.key === "Backspace"
+    ) {
+      event.preventDefault();
+
+      documentEditor.deleteSelected();
+    }
+  }
+);

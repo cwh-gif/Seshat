@@ -159,3 +159,307 @@ dialog .small { color: var(--muted); font-size: .85rem; }
   .card.best { width: 118px; }
   .card.best img { height: 76px; }
 }
+
+
+
+#document-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+}
+
+.document-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.document-glyph {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.document-sign span {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+
+
+
+/* ============================================================
+   Seshat document editor
+   ============================================================ */
+
+.document-editor {
+  width: min(100%, 1000px);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.document-header {
+  align-items: center;
+}
+
+.document-heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.document-heading h1 {
+  margin: 0;
+}
+
+.document-content {
+  min-height: 260px;
+
+  margin: 16px 0 24px;
+  padding: 24px;
+
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+
+  background: #fffdf8;
+
+  display: flex;
+  flex-wrap: wrap;
+
+  align-content: flex-start;
+  align-items: center;
+
+  gap: 10px;
+
+  cursor: text;
+}
+
+.document-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin: 10px 0;
+}
+
+.document-section {
+  margin-top: 22px;
+}
+
+.document-section h2 {
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+
+/* ------------------------------------------------------------
+   individual signs
+   ------------------------------------------------------------ */
+
+.document-sign {
+  appearance: none;
+
+  border: 2px solid transparent;
+  border-radius: 8px;
+
+  background: transparent;
+
+  padding: 7px;
+
+  min-width: 66px;
+
+  display: inline-flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.document-sign:hover {
+  background: rgba(0, 0, 0, 0.045);
+}
+
+.document-sign:active {
+  transform: scale(0.97);
+}
+
+.document-sign.selected {
+  border-color: currentColor;
+
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.document-glyph {
+  display: block;
+
+  font-size: 64px;
+  line-height: 1.05;
+
+  font-family:
+    "Noto Sans Egyptian Hieroglyphs",
+    "Segoe UI Historic",
+    sans-serif;
+}
+
+.document-code {
+  margin-top: 5px;
+
+  font-size: 12px;
+
+  opacity: 0.65;
+}
+
+
+/* ------------------------------------------------------------
+   groups
+   ------------------------------------------------------------ */
+
+.document-group {
+  position: relative;
+
+  display: inline-flex;
+
+  padding: 7px;
+
+  border: 2px dashed rgba(0, 0, 0, 0.18);
+
+  border-radius: 10px;
+
+  cursor: pointer;
+}
+
+.document-group.selected {
+  border-style: solid;
+  border-color: currentColor;
+
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.document-group-children {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 3px;
+}
+
+.document-group-horizontal
+.document-group-children {
+  flex-direction: row;
+}
+
+.document-group-vertical
+.document-group-children {
+  flex-direction: column;
+}
+
+
+/*
+ * Hieroglyphs inside vertical groups should normally
+ * occupy less space than standalone signs.
+ */
+
+.document-group-vertical
+.document-glyph {
+  font-size: 46px;
+}
+
+.document-group-horizontal
+.document-glyph {
+  font-size: 52px;
+}
+
+
+/* ------------------------------------------------------------
+   line break
+   ------------------------------------------------------------ */
+
+.document-line-break {
+  appearance: none;
+
+  flex-basis: 100%;
+
+  width: 100%;
+
+  height: 18px;
+
+  padding: 0;
+
+  border: 0;
+  border-top: 1px dashed rgba(0, 0, 0, 0.2);
+
+  background: transparent;
+
+  color: rgba(0, 0, 0, 0.45);
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.document-line-break.selected {
+  border-top: 2px solid currentColor;
+}
+
+
+/* ------------------------------------------------------------
+   empty document
+   ------------------------------------------------------------ */
+
+.document-empty {
+  margin: auto;
+
+  min-height: 180px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  opacity: 0.55;
+
+  pointer-events: none;
+}
+
+.document-empty-icon {
+  margin-bottom: 12px;
+
+  font-size: 54px;
+
+  font-family:
+    "Noto Sans Egyptian Hieroglyphs",
+    "Segoe UI Historic",
+    sans-serif;
+}
+
+.document-empty span {
+  margin-top: 5px;
+
+  font-size: 13px;
+}
+
+
+/* ------------------------------------------------------------
+   buttons
+   ------------------------------------------------------------ */
+
+.tool.danger {
+  border-color: rgba(150, 0, 0, 0.4);
+}
+
+.tool.danger:hover {
+  background: rgba(150, 0, 0, 0.08);
+}

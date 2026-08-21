@@ -19,7 +19,7 @@
 <!-- ============================== screen 1: draw ============================== -->
 <section id="screen-draw" class="screen">
   <header class="bar">
-    <h1>Hieroglyph spamming letters<span>Dictionary</span></h1>
+    <h1>Hieroglyph<span>Dictionary</span></h1>
   </header>
 
   <div class="draw-wrap">
@@ -49,7 +49,9 @@
   </div>
 
   <footer class="foot">
-    <p>Runs entirely on your device · <a href="#" id="history-link">history</a> ·
+    <p>Runs entirely on your device ·
+       <a href="#" id="document-link">document</a> ·
+       <a href="#" id="history-link">history</a> ·
        <a href="#" id="about-link">about</a></p>
   </footer>
 </section>
@@ -91,6 +93,213 @@
     <button id="btn-next" class="tool next">✎ Next sign</button>
   </div>
 </section>
+
+
+
+<!-- ============================== document editor ============================== -->
+
+<section id="screen-document" class="screen" hidden>
+
+  <header class="bar document-header">
+    <button
+      id="btn-document-back"
+      class="back"
+      aria-label="back"
+    >
+      ←
+    </button>
+
+    <div class="document-heading">
+      <h1 id="document-title">
+        Untitled Document
+      </h1>
+
+      <span
+        id="document-save-status"
+        class="small"
+      >
+        Saved locally
+      </span>
+    </div>
+  </header>
+
+  <main class="document-editor">
+
+    <!-- primary actions -->
+
+    <div class="document-toolbar">
+
+      <button
+        id="btn-document-new"
+        class="tool"
+      >
+        New
+      </button>
+
+      <button
+        id="btn-document-rename"
+        class="tool"
+      >
+        Rename
+      </button>
+
+      <button
+        id="btn-document-undo"
+        class="tool"
+      >
+        Undo
+      </button>
+
+      <button
+        id="btn-document-redo"
+        class="tool"
+      >
+        Redo
+      </button>
+
+      <button
+        id="btn-document-clear"
+        class="tool danger"
+      >
+         Clear all
+      </button>
+
+      <button
+        id="btn-document-export"
+        class="tool"
+      >
+        Export JSON
+      </button>
+
+      <button
+        id="btn-document-export-png"
+        class="tool"
+      >
+        Export PNG
+      </button>
+
+    </div>
+
+
+    <!-- editing canvas -->
+
+    <div
+      id="document-content"
+      class="document-content"
+      aria-label="Hieroglyphic document"
+    ></div>
+
+
+    <!-- sign insertion -->
+
+    <div class="document-section">
+
+      <h2>Add</h2>
+
+      <div class="document-toolbar">
+
+        <button
+          id="btn-document-draw"
+          class="tool primary"
+        >
+          ✎ Draw sign
+        </button>
+
+        <button
+          id="btn-document-code"
+          class="tool"
+        >
+          + Gardiner code
+        </button>
+
+        <button
+          id="btn-document-linebreak"
+          class="tool"
+        >
+          ↵ Line break
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- selected-item actions -->
+
+    <div class="document-section">
+
+      <h2>Edit selection</h2>
+
+      <p class="small">
+        Click one sign to select it.
+        Ctrl/Cmd-click to select multiple signs.
+      </p>
+
+      <div class="document-toolbar">
+
+        <button
+          id="btn-document-left"
+          class="tool"
+        >
+          ← Move
+        </button>
+
+        <button
+          id="btn-document-right"
+          class="tool"
+        >
+          Move →
+        </button>
+
+        <button
+          id="btn-document-delete"
+          class="tool danger"
+        >
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- JSesh-like grouping -->
+
+    <div class="document-section">
+
+      <h2>Arrange</h2>
+
+      <div class="document-toolbar">
+
+        <button
+          id="btn-document-horizontal"
+          class="tool"
+        >
+          Group horizontally
+        </button>
+
+        <button
+          id="btn-document-vertical"
+          class="tool"
+        >
+          Group vertically
+        </button>
+
+        <button
+          id="btn-document-ungroup"
+          class="tool"
+        >
+          Ungroup
+        </button>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</section>
+
 
 <!-- ============================== about ====================================== -->
 <dialog id="about">
