@@ -163,19 +163,29 @@
       >
          Clear all
       </button>
+    
+    </div>
 
-      <button
-        id="btn-document-export"
-        class="tool"
-      >
-        Export JSON
-      </button>
-
+    <div class="document-toolbar">
       <button
         id="btn-document-export-png"
         class="tool"
       >
         Export PNG
+      </button>
+
+      <button 
+        id="btn-document-export-jpeg"
+        class="tool"
+      >
+        Export JPEG
+      </button>
+
+      <button
+        id="btn-document-copy"
+        class="tool"
+      >
+        Copy All
       </button>
 
     </div>
@@ -251,6 +261,13 @@
           Move →
         </button>
 
+        <button 
+          id="btn-document-reverse" 
+          class="tool"
+          >
+          Reverse glyph
+        </button>
+
         <button
           id="btn-document-delete"
           class="tool danger"
@@ -292,6 +309,8 @@
           Ungroup
         </button>
 
+
+
       </div>
 
     </div>
@@ -316,6 +335,7 @@
   <button id="about-close" class="tool">Close</button>
 </dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="./vendor/ort/ort.min.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>

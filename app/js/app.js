@@ -640,12 +640,20 @@ $("btn-document-clear").onclick = () => {
 };
 
 
-$("btn-document-export").onclick = () => {
-  documentEditor.exportJSON();
-};
+// $("btn-document-export").onclick = () => {
+//   documentEditor.exportJSON();
+// };
 
 $("btn-document-export-png").onclick = () => {
-  documentEditor.exportPNG();
+  documentEditor.exportImage();
+};
+
+$("btn-document-export-jpeg").onclick = () => {
+  documentEditor.exportImage();
+};
+
+$("btn-document-copy").onclick = () => {
+  documentEditor.copyAllGlyphs();
 };
 
 
@@ -679,6 +687,8 @@ $("btn-document-linebreak").onclick = () => {
 };
 
 
+
+
 /* ------------------------------------------------------------
  * Editing
  * ------------------------------------------------------------ */
@@ -696,6 +706,10 @@ $("btn-document-left").onclick = () => {
 $("btn-document-right").onclick = () => {
   documentEditor.moveSelectedRight();
 };
+
+$("btn-document-reverse").onclick = () => {
+  documentEditor.reverseSelected();
+}
 
 
 /* ------------------------------------------------------------
@@ -715,6 +729,8 @@ $("btn-document-vertical").onclick = () => {
 $("btn-document-ungroup").onclick = () => {
   documentEditor.ungroupSelected();
 };
+
+
 
 
 /* ------------------------------------------------------------

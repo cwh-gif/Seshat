@@ -41,6 +41,14 @@ export class DocumentEditor {
       loadDocument() ||
       createDocument();
 
+      /*
+      * Older saved documents may not have
+      * a direction property yet.
+      */
+    if (!this.document.direction) {
+     this.document.direction = "ltr";
+    }
+
     this.history = new DocumentHistory();
 
     this.selectedIds = new Set();
@@ -50,6 +58,8 @@ export class DocumentEditor {
       (() => {});
 
     this.render();
+
+    
   }
 
   /* ========================================================
@@ -137,6 +147,8 @@ export class DocumentEditor {
 
     this.render();
   }
+
+
 
   /* ========================================================
    * INSERT
@@ -312,6 +324,45 @@ export class DocumentEditor {
     this.changed();
   }
 
+  
+  reverseSelected() {
+    if (this.selectedIds.size === 0) {
+      return;
+    }
+  
+    this.beforeChange();
+  
+    let changed = false;
+  
+    function reverseItems(items, selectedIds) {
+      for (const item of items) {
+        if (
+          item.type === "sign" &&
+          selectedIds.has(item.id)
+        ) {
+          item.reversed = !item.reversed;
+          changed = true;
+        }
+  
+        if (item.type === "group") {
+          reverseItems(
+            item.children,
+            selectedIds
+          );
+        }
+      }
+    }
+  
+    reverseItems(
+      this.document.items,
+      this.selectedIds
+    );
+  
+    if (changed) {
+      this.changed();
+    }
+  }
+
   /* ========================================================
    * GROUPING
    * ======================================================== */
@@ -438,6 +489,8 @@ export class DocumentEditor {
     this.changed();
   }
 
+
+  
   /* ========================================================
    * UNDO / REDO /CLEARALL
    * ======================================================== */
@@ -550,296 +603,286 @@ export class DocumentEditor {
     this.changed();
   }
 
-  exportJSON() {
-    const data =
-      JSON.stringify(
-        this.document,
-        null,
-        2
+
+//   exportJSON() {
+//     const data =
+//       JSON.stringify(
+//         this.document,
+//         null,
+//         2
+//       );
+
+//     const blob =
+//       new Blob(
+//         [data],
+//         {
+//           type: "application/json"
+//         }
+//       );
+
+//     const url =
+//       URL.createObjectURL(blob);
+
+//     const a =
+//       document.createElement("a");
+
+//     a.href = url;
+
+//     a.download =
+//       `${this.document.title
+//         .replace(/[^\w-]+/g, "_")}.json`;
+
+//     a.click();
+
+//     URL.revokeObjectURL(url);
+//   }
+
+
+async exportImage(format = "png") {
+    const element =
+      document.getElementById("document-content");
+  
+    if (!element) {
+      alert("Document area not found.");
+      return;
+    }
+  
+    if (
+      typeof window.html2canvas === "undefined"
+    ) {
+      alert(
+        "Image export library is not available."
       );
-
-    const blob =
-      new Blob(
-        [data],
-        {
-          type: "application/json"
-        }
+  
+      return;
+    }
+  
+    const previousSelection =
+      new Set(this.selectedIds);
+  
+    /*
+     * Hide selection highlighting from export.
+     */
+    this.selectedIds.clear();
+  
+    await this.render();
+  
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
+    });
+  
+    try {
+      const isJPEG =
+        format === "jpeg" ||
+        format === "jpg";
+  
+      const canvas =
+        await window.html2canvas(
+          element,
+          {
+            /*
+             * JPEG cannot have transparency,
+             * so always give it a background.
+             */
+            backgroundColor: "#fffdf8",
+  
+            scale: 2,
+            useCORS: true,
+            logging: false
+          }
+        );
+  
+      const safeTitle =
+        String(
+          this.document.title ||
+          "seshat-document"
+        )
+          .trim()
+          .replace(/[^\w-]+/g, "_");
+  
+      const link =
+        document.createElement("a");
+  
+      if (isJPEG) {
+        link.download =
+          `${safeTitle || "seshat-document"}.jpg`;
+  
+        /*
+         * 0.92 = JPEG quality.
+         * Range is 0–1.
+         */
+        link.href =
+          canvas.toDataURL(
+            "image/jpeg",
+            0.92
+          );
+      } else {
+        link.download =
+          `${safeTitle || "seshat-document"}.png`;
+  
+        link.href =
+          canvas.toDataURL(
+            "image/png"
+          );
+      }
+  
+      link.click();
+  
+    } catch (error) {
+      console.error(
+        "Image export failed:",
+        error
       );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-      `${this.document.title
-        .replace(/[^\w-]+/g, "_")}.json`;
-
-    a.click();
-
-    URL.revokeObjectURL(url);
+  
+      alert(
+        "Could not export the document."
+      );
+  
+    } finally {
+      this.selectedIds =
+        previousSelection;
+  
+      await this.render();
+    }
   }
 
 
+  async copyAllGlyphs() {
+    const response = await fetch("./data/glyphs.json");
   
-  async exportPNG() {
-    const glyphResponse = await fetch("./data/glyphs.json");
-  
-    if (!glyphResponse.ok) {
+    if (!response.ok) {
       alert("Could not load glyph data.");
       return;
     }
   
-    const glyphs = await glyphResponse.json();
+    const glyphs = await response.json();
   
-    const padding = 40;
-    const signSize = 80;
-    const codeHeight = 22;
-    const gap = 16;
-    const lineHeight = signSize + codeHeight + 30;
+    function itemToText(item) {
+      if (item.type === "sign") {
+        return glyphs[item.code]?.char || "";
+      }
   
-    const rows = [];
-    let currentRow = [];
+      if (item.type === "group") {
+        return item.children
+          .map(itemToText)
+          .join("");
+      }
   
-    for (const item of this.document.items) {
       if (item.type === "lineBreak") {
-        rows.push(currentRow);
-        currentRow = [];
-      } else {
-        currentRow.push(item);
+        return "\n";
       }
+  
+      return "";
     }
   
-    rows.push(currentRow);
+    const text = this.document.items
+      .map(itemToText)
+      .join("");
   
-    function measureItem(item) {
-      if (item.type === "sign") {
-        return {
-          width: signSize,
-          height: signSize + codeHeight
-        };
-      }
-  
-      if (item.type === "group") {
-        const children = item.children.map(measureItem);
-  
-        if (item.direction === "horizontal") {
-          return {
-            width:
-              children.reduce(
-                (sum, child) => sum + child.width,
-                0
-              ) +
-              gap * Math.max(0, children.length - 1),
-  
-            height: Math.max(
-              ...children.map(child => child.height)
-            )
-          };
-        }
-  
-        return {
-          width: Math.max(
-            ...children.map(child => child.width)
-          ),
-  
-          height:
-            children.reduce(
-              (sum, child) => sum + child.height,
-              0
-            ) +
-            gap * Math.max(0, children.length - 1)
-        };
-      }
-  
-      return {
-        width: 0,
-        height: 0
-      };
+    if (!text.trim()) {
+      alert("There are no glyphs to copy.");
+      return;
     }
   
-    const rowMeasurements = rows.map(row => {
-      const items = row.map(measureItem);
-  
-      const width =
-        items.reduce(
-          (sum, item) => sum + item.width,
-          0
-        ) +
-        gap * Math.max(0, items.length - 1);
-  
-      const height =
-        items.length
-          ? Math.max(...items.map(item => item.height))
-          : lineHeight;
-  
-      return {
-        items,
-        width,
-        height
-      };
-    });
-  
-    const canvasWidth =
-      Math.max(
-        400,
-        ...rowMeasurements.map(row => row.width)
-      ) +
-      padding * 2;
-  
-    const canvasHeight =
-      rowMeasurements.reduce(
-        (sum, row) => sum + row.height,
-        0
-      ) +
-      gap * Math.max(0, rowMeasurements.length - 1) +
-      padding * 2;
-  
-    const canvas = document.createElement("canvas");
-  
-    canvas.width = Math.ceil(canvasWidth);
-    canvas.height = Math.ceil(canvasHeight);
-  
-    const ctx = canvas.getContext("2d");
-  
-    ctx.fillStyle = "#fffdf8";
-    ctx.fillRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-  
-    ctx.fillStyle = "#1c1a17";
-  
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-  
-    function drawItem(item, x, y) {
-      if (item.type === "sign") {
-        const data = glyphs[item.code];
-  
-        const char =
-          data?.char || "?";
-  
-        ctx.font =
-          '64px "Noto Sans Egyptian Hieroglyphs", "Segoe UI Historic", sans-serif';
-  
-        ctx.fillText(
-          char,
-          x + signSize / 2,
-          y + signSize / 2
-        );
-  
-        ctx.font =
-          "12px sans-serif";
-  
-        ctx.fillText(
-          item.code,
-          x + signSize / 2,
-          y + signSize + 8
-        );
-  
-        return;
-      }
-  
-      if (item.type === "group") {
-        const measurements =
-          item.children.map(measureItem);
-  
-        if (item.direction === "horizontal") {
-          let childX = x;
-  
-          for (let i = 0; i < item.children.length; i++) {
-            const child =
-              item.children[i];
-  
-            const size =
-              measurements[i];
-  
-            drawItem(
-              child,
-              childX,
-              y
-            );
-  
-            childX +=
-              size.width + gap;
-          }
-  
-          return;
-        }
-  
-        let childY = y;
-  
-        for (let i = 0; i < item.children.length; i++) {
-          const child =
-            item.children[i];
-  
-          const size =
-            measurements[i];
-  
-          drawItem(
-            child,
-            x,
-            childY
-          );
-  
-          childY +=
-            size.height + gap;
-        }
-      }
+    try {
+      await navigator.clipboard.writeText(text);
+    //   alert("Glyphs copied to clipboard.");
+    } catch (error) {
+      console.error("Could not copy glyphs:", error);
+      alert("Could not copy glyphs.");
     }
-  
-    let y = padding;
-  
-    for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-      const row =
-        rows[rowIndex];
-  
-      const measurements =
-        rowMeasurements[rowIndex];
-  
-      let x = padding;
-  
-      for (let i = 0; i < row.length; i++) {
-        const item =
-          row[i];
-  
-        drawItem(
-          item,
-          x,
-          y
-        );
-  
-        x +=
-          measurements.items[i].width +
-          gap;
-      }
-  
-      y +=
-        measurements.height +
-        gap;
-    }
-  
-    const link =
-      document.createElement("a");
-  
-    const safeTitle =
-      this.document.title
-        .replace(/[^\w-]+/g, "_");
-  
-    link.download =
-      `${safeTitle || "seshat-document"}.png`;
-  
-    link.href =
-      canvas.toDataURL("image/png");
-  
-    link.click();
   }
+
+  async copySelectedGlyphs() {
+    if (!this.selectedIds.size) {
+      return false;
+    }
+  
+    const response = await fetch("./data/glyphs.json");
+  
+    if (!response.ok) {
+      return false;
+    }
+  
+    const glyphs = await response.json();
+  
+    function itemToText(item, selectedIds) {
+      if (item.type === "sign") {
+        if (!selectedIds.has(item.id)) {
+          return "";
+        }
+  
+        return glyphs[item.code]?.char || "";
+      }
+  
+      if (item.type === "group") {
+        /*
+         * If the whole group itself is selected,
+         * copy every sign inside it.
+         */
+        if (selectedIds.has(item.id)) {
+          return item.children
+            .map(child => allItemText(child))
+            .join("");
+        }
+  
+        /*
+         * Otherwise copy individually selected
+         * children.
+         */
+        return item.children
+          .map(child =>
+            itemToText(child, selectedIds)
+          )
+          .join("");
+      }
+  
+      return "";
+    }
+  
+    function allItemText(item) {
+      if (item.type === "sign") {
+        return glyphs[item.code]?.char || "";
+      }
+  
+      if (item.type === "group") {
+        return item.children
+          .map(allItemText)
+          .join("");
+      }
+  
+      return "";
+    }
+  
+    const text = this.document.items
+      .map(item =>
+        itemToText(
+          item,
+          this.selectedIds
+        )
+      )
+      .join("");
+  
+    if (!text) {
+      return false;
+    }
+  
+    try {
+      await navigator.clipboard.writeText(text);
+  
+      return true;
+    } catch (error) {
+      console.error(
+        "Could not copy selected glyphs:",
+        error
+      );
+  
+      return false;
+    }
+  }
+
 
   /* ========================================================
    * RENDER

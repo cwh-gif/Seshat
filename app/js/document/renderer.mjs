@@ -43,6 +43,10 @@ function createSignElement(
   const glyph = document.createElement("span");
   glyph.className = "document-glyph";
 
+  if (item.reversed) {
+    glyph.classList.add("reversed");
+  }
+
   const data = glyphs[item.code];
 
   glyph.textContent =
@@ -50,12 +54,9 @@ function createSignElement(
       ? data.char
       : "?";
 
-  const code = document.createElement("span");
-  code.className = "document-code";
-  code.textContent = item.code;
+
 
   element.appendChild(glyph);
-  element.appendChild(code);
 
   if (data?.desc) {
     element.title = `${item.code}: ${data.desc}`;
@@ -226,6 +227,8 @@ export async function renderDocument(
   const glyphs = await loadGlyphData();
 
   container.replaceChildren();
+
+  
 
   if (!doc.items.length) {
     container.appendChild(createEmptyMessage());

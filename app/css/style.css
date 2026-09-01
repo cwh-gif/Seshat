@@ -233,7 +233,11 @@ dialog .small { color: var(--muted); font-size: .85rem; }
   gap: 10px;
 
   cursor: text;
+
+
 }
+
+
 
 .document-toolbar {
   display: flex;
@@ -298,8 +302,8 @@ dialog .small { color: var(--muted); font-size: .85rem; }
   background: rgba(0, 0, 0, 0.07);
 }
 
-.document-glyph {
-  display: block;
+.document-sign .document-glyph{
+  display: inline-block;
 
   font-size: 64px;
   line-height: 1.05;
@@ -310,12 +314,9 @@ dialog .small { color: var(--muted); font-size: .85rem; }
     sans-serif;
 }
 
-.document-code {
-  margin-top: 5px;
 
-  font-size: 12px;
-
-  opacity: 0.65;
+.document-sign .document-glyph.reversed {
+  transform: scaleX(-1);
 }
 
 
@@ -364,20 +365,6 @@ dialog .small { color: var(--muted); font-size: .85rem; }
 }
 
 
-/*
- * Hieroglyphs inside vertical groups should normally
- * occupy less space than standalone signs.
- */
-
-.document-group-vertical
-.document-glyph {
-  font-size: 46px;
-}
-
-.document-group-horizontal
-.document-glyph {
-  font-size: 52px;
-}
 
 
 /* ------------------------------------------------------------

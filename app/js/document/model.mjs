@@ -24,7 +24,8 @@ export function createSign(code) {
   return {
     id: makeId(),
     type: "sign",
-    code
+    code,
+    reversed: false
   };
 }
 
